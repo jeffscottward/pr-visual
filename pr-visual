@@ -192,7 +192,9 @@ def trim(png):
         if box:
             im.crop((0, 0, im.width, min(im.height, box[3] + 28))).save(png)
     except ImportError:
-        pass
+        if shutil.which("magick"):
+            subprocess.run(["magick", png, "-gravity", "north", "-background", "#0d1117", "-trim", "+repage",
+                            "-bordercolor", "#0d1117", "-border", "28", png], capture_output=True)
 
 
 def with_block(body, img_md):
