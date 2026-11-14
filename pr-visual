@@ -91,6 +91,13 @@ class GitLab:
 
     def set_body(self, body):
         self._req("PUT", f"/projects/{self.pid}/merge_requests/{self.iid}", json.dumps({"description": body}).encode(), {"Content-Type": "application/json"})
+        # An MR pipeline keeps the description it saw when it was created (CI_MERGE_REQUEST_DESCRIPTION),
+        # so start a new MR pipeline; otherwise pr-visual-check keeps the old result.
+        try:
+            pl = self._req("POST", f"/projects/{self.pid}/merge_requests/{self.iid}/pipelines")
+            print(f"pr-visual: started MR pipeline {pl.get('id')} so pr-visual-check sees the graphic")
+        except Exception as e:  # e.g. 405 when the MR has no changes or the project has no MR pipelines
+            print(f"pr-visual: could not start a new MR pipeline ({e}); start one by hand", file=sys.stderr)
 
 
 def source_for(url):
