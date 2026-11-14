@@ -1,0 +1,28 @@
+# Reusable check: a PR description needs an image in its first lines (owner 2026-11-14, card pr-visuals).
+# Report-only (warning, job passes) until enforce_after; after that date a missing graphic fails the job.
+name: pr-visual-check
+on:
+  workflow_call:
+    inputs:
+      enforce_after:
+        type: string
+        default: "2026-11-17"
+jobs:
+  pr-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Graphic at the top of the PR description
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          ENFORCE_AFTER: ${{ inputs.enforce_after }}
+        run: |
+          head=$(printf '%s\n' "$BODY" | head -n 15)
+          if printf '%s' "$head" | grep -Eqi '!\[[^]]*\]\([^)]+\)|<img[[:space:]]'; then
+            echo "pr-visual: OK, image in the first 15 lines"; exit 0
+          fi
+          msg="No before/after graphic in the first 15 lines of the PR description. Run: pr-visual <PR URL> --before ... --after ..."
+          if [ "$(date -u +%F)" \< "$ENFORCE_AFTER" ]; then
+            echo "::warning title=pr-visual (report-only until $ENFORCE_AFTER)::$msg"; exit 0
+          fi
+          echo "::error title=pr-visual::$msg"; exit 1
