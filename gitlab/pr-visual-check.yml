@@ -1,0 +1,20 @@
+# Include in a rig GitLab CI config:  include: [{project: jeffscottward/ci-config, file: pr-visual-check.yml}]
+# Report-only (job warns, pipeline stays green) until PR_VISUAL_ENFORCE_AFTER; then a missing graphic fails.
+pr-visual-check:
+  stage: .pre
+  image: alpine:3.20
+  timeout: 2m
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    PR_VISUAL_ENFORCE_AFTER: "2026-11-17"
+    GIT_STRATEGY: none
+  allow_failure:
+    exit_codes: [3]
+  script:
+    - |
+      head=$(printf '%s\n' "$CI_MERGE_REQUEST_DESCRIPTION" | head -n 15)
+      if printf '%s' "$head" | grep -Eqi '!\[[^]]*\]\([^)]+\)|<img[[:space:]]'; then echo "pr-visual: OK, image in the first 15 lines"; exit 0; fi
+      echo "pr-visual: no before/after graphic in the first 15 lines of the MR description. Run: pr-visual <MR URL> --before ... --after ..."
+      if [ "$(date -u +%F)" \< "$PR_VISUAL_ENFORCE_AFTER" ]; then echo "report-only until $PR_VISUAL_ENFORCE_AFTER"; exit 3; fi
+      exit 1
