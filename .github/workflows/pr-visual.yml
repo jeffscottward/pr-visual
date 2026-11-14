@@ -1,0 +1,8 @@
+# Caller: copy this file into a repo's .github/workflows/ to turn the check on.
+name: pr-visual
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+jobs:
+  check:
+    uses: jeffscottward/pr-visual/.github/workflows/check.yml@main
